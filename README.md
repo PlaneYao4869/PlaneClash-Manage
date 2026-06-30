@@ -12,16 +12,36 @@ automatic backup.
 > PlaneClash Manage is the **opposite** — it's a tiny tool that only does one
 > thing: **manage rules**.
 
-## Features (MVP roadmap)
+## Features
 
-- [x] **Step 1**: scan the computer for installed Clash clients and report
+- ✅ **Step 1**: scan the computer for installed Clash clients and report
       their `config.yaml` location.
-- [ ] **Step 2**: parse a selected `config.yaml` and display its `rules:`
+- ✅ **Step 2**: parse a selected `config.yaml` and display its `rules:`
       list (grouped by type).
-- [ ] **Step 3**: add a domain rule and save (auto-backup, write back).
-- [ ] **Step 4**: add a process rule and save.
-- [ ] **Step 5**: IP-CIDR, RULE-SET, MATCH (fallback) types.
-- [ ] **Step 6**: per-client format adapters (mihomo yaml, Clash Verge, etc.).
+- ✅ **Step 3**: add a domain rule and save (auto-backup, write back).
+- ✅ **Step 4**: add a process rule and save.
+- ✅ **Step 5**: IP-CIDR, RULE-SET, MATCH (fallback) types.
+- ✅ **Step 6**: format-compatible with mihomo / Clash Verge / Clash for
+      Windows (all use the same `rules:` YAML block format).
+
+## MVP feature list (what works today)
+
+- **Auto-detect** installed Clash clients (FlClash at `D:\FlClash`, Clash
+  Verge at `%LOCALAPPDATA%\clash-verge`, etc.) plus opportunistic scan of
+  `D:\` and `C:\` for any folder with "clash" / "verge" / "mihomo" in name
+- **Manual pick** as fallback (Tauri dialog)
+- **Parse** `rules:` block of any selected `config.yaml` (preserves
+  comments by tracking `disabled_in_source`)
+- **Group tabs**: domain / process / IP-CIDR / RULE-SET / MATCH / logical
+- **Search** across payload + target
+- **Multi-select** + bulk delete + clear selection
+- **Add dialog** with 12 creatable rule types and common-target datalist
+- **One-click import** of 17 common Chinese domains (baidu / bilibili /
+  taobao / etc.) as `DOMAIN-SUFFIX,DIRECT` rules
+- **Save** with atomic write + single-file `.bak` backup (overwrites prior
+  backup; we do NOT keep multi-version history)
+- **Reload** with dirty-state guard
+- **6 unit tests** for the Rust core (scanner + rules parser + writer)
 
 ## Why Tauri 2?
 

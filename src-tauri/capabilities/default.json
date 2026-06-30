@@ -12,6 +12,7 @@
     "core:menu:default",
     "core:tray:default",
     "dialog:default",
+    "dialog:allow-open",
     "fs:default",
     "shell:default"
   ]
