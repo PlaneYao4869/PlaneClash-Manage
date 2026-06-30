@@ -200,11 +200,29 @@ impl Rule {
     /// want it in the payload).
     pub fn parse(line: &str) -> Option<Self> {
         let trimmed = line.trim_start();
-        // Strip YAML list marker
-        let body = trimmed.strip_prefix('-').unwrap_or(trimmed).trim();
-        if body.is_empty() || body.starts_with('#') {
+
+        // Detect "commented-out" lines: they start with `#`. The rule body
+        // we still want to parse lives after `# - ` (YAML "commented-out list
+        // item") or sometimes `# TYPE,...` (commented without list marker).
+        let (body_after_marker, disabled_in_source) = if let Some(rest) = trimmed.strip_prefix("# - ") {
+            (rest, true)
+        } else if let Some(rest) = trimmed.strip_prefix("# ") {
+            (rest, true)
+        } else {
+            (trimmed, false)
+        };
+
+        // Strip a YAML list marker (`- `) if present.
+        let body = body_after_marker
+            .strip_prefix("- ")
+            .or_else(|| body_after_marker.strip_prefix("-"))
+            .unwrap_or(body_after_marker)
+            .trim();
+
+        if body.is_empty() {
             return None;
         }
+
         let parts: Vec<&str> = body.split(',').map(|s| s.trim()).collect();
         if parts.len() < 2 {
             return None;
@@ -222,7 +240,6 @@ impl Rule {
         } else {
             Vec::new()
         };
-        let disabled_in_source = trimmed.starts_with('#');
         Some(Rule {
             id: 0, // assigned later by parse_rules()
             rule_type,
@@ -309,8 +326,12 @@ pub fn locate_rules_block(yaml_text: &str) -> Option<(usize, usize)> {
 
     let mut pos = 0usize;
     for line in yaml_text.split_inclusive('\n') {
-        let trimmed_start = line.trim_start();
-        let leading = line.len() - trimmed_start.len();
+        // split_inclusive keeps the trailing '\n', which means raw equality
+        // checks like `== "rules:"` would fail because of the trailing \n.
+        // Use trim_end() to strip both leading whitespace and the newline
+        // before comparing.
+        let trimmed_start = line.trim_end().trim_start();
+        let leading = line.len() - line.trim_start().len();
 
         if !in_rules {
             if trimmed_start == "rules:" || trimmed_start.starts_with("rules: ") {
