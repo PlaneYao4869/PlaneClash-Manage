@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "PlaneClash Manage",
+  "version": "0.1.0",
+  "identifier": "com.planeclash.manage",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "PlaneClash Manage",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Clash rule manager for FlClash / Clash Verge / mihomo",
+    "longDescription": "PlaneClash Manage is a standalone desktop tool that scans your computer for Clash-based proxy clients (FlClash, Clash Verge, mihomo, etc.) and lets you add/manage domain and process rules, writing them back to each client's config.yaml with automatic backup."
+  },
+  "plugins": {}
+}

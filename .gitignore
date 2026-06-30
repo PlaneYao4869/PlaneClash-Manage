@@ -1,0 +1,29 @@
+# Node
+node_modules/
+dist/
+.vite/
+*.log
+npm-debug.log*
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/gen/
+src-tauri/WixTools/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build outputs
+*.exe
+*.msi
+*.deb
+*.dmg
+*.AppImage
+
+# Secrets
+.env
+.env.local
