@@ -309,6 +309,7 @@ pub fn parse_rules(yaml_text: &str) -> Vec<Rule> {
 
 /// Serialize rules back to YAML list-item lines. Caller is responsible
 /// for prefixing `rules:\n` and the proper indentation.
+#[allow(dead_code)]
 pub fn rules_to_yaml_lines(rules: &[Rule]) -> Vec<String> {
     rules.iter().map(|r| r.to_yaml_line()).collect()
 }
@@ -345,7 +346,22 @@ pub fn locate_rules_block(yaml_text: &str) -> Option<(usize, usize)> {
                 // continue
             } else {
                 let indent = rules_indent.unwrap_or(0) + 2;
-                if leading < indent && trimmed_start.ends_with(':') {
+                // Detect a "next top-level key" line: it has less indent than
+                // the rule lines, AND it looks like a key (contains exactly
+                // one ':' that isn't followed by YAML collection braces/brackets
+                // and isn't at the very start of a list item).
+                //
+                // Examples we treat as the next key:
+                //   "proxies:"
+                //   "proxy-groups:"
+                //   "rule-providers:"
+                //   "dns:"            (also followed by anything)
+                //
+                // Examples we DON'T treat as a new key (still inside rules):
+                //   "- DOMAIN,foo,DIRECT"            (list item)
+                //   "# comment"                       (commented out)
+                //   "  - foo: bar"                    (nested mapping)
+                if leading < indent && is_top_level_key(trimmed_start) {
                     // End of rules block — return up to this line's start
                     return Some((start.unwrap(), pos));
                 }
@@ -357,6 +373,33 @@ pub fn locate_rules_block(yaml_text: &str) -> Option<(usize, usize)> {
 
     // Reached EOF while still inside rules block
     start.map(|s| (s, yaml_text.len()))
+}
+
+/// Heuristic: is this line a top-level YAML key (e.g. `proxies:` or
+/// `proxy-groups: []`)? Returns false for list items (`- foo`) and
+/// for indented mappings (`foo: bar` with leading spaces).
+fn is_top_level_key(trimmed: &str) -> bool {
+    if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with('-') {
+        return false;
+    }
+    // Find the FIRST ':' that isn't at the start — that's the key/value split.
+    // YAML allows `:` inside unquoted values, so we look for one that has
+    // either end-of-line, a space, or `[`/`{` after it.
+    if let Some(idx) = trimmed.find(':') {
+        if idx == 0 {
+            return false; // ":foo" — not a valid key
+        }
+        let after = &trimmed[idx + 1..];
+        // After the colon we want either end-of-line or a separator char.
+        // Inline collections like `proxies: []` have a space then `[`.
+        return after.is_empty()
+            || after.starts_with(' ')
+            || after.starts_with('[')
+            || after.starts_with('{')
+            || after.starts_with('"')
+            || after.starts_with('\'');
+    }
+    false
 }
 
 /// Replace the `rules:` block in `yaml_text` with the new rules.
@@ -494,9 +537,14 @@ proxies:
         let yaml = "mixed-port: 7890\nrules:\n  - A,B,C\nproxies:\n  - x\n";
         let (s, e) = locate_rules_block(yaml).unwrap();
         let block = &yaml[s..e];
+        // The block should be just the `rules:` section: header + list
+        // items only, NOT including the next top-level key (proxies:).
         assert!(block.starts_with("rules:"));
         assert!(block.contains("A,B,C"));
-        assert!(block.contains("proxies:"));
+        assert!(!block.contains("proxies:"));
+        // After the block, the original "proxies:" must be preserved
+        // (replace_rules_block appends yaml[end..] verbatim).
+        assert!(yaml[e..].starts_with("proxies:"));
     }
 
     #[test]
