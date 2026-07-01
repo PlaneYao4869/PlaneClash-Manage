@@ -59,29 +59,52 @@ fn client_hints() -> Vec<ClientHint> {
     let appdata_roaming = home.join("AppData").join("Roaming");
 
     // Common Clash client install locations. Add more as users report them.
+    //
+    // Key lesson from a real scan (2026-07-01): the "install_root" for many
+    // Clash clients is NOT where the .exe lives — that's just the binaries.
+    // The config dir is a sibling under %APPDATA% or %LOCALAPPDATA%. For
+    // example FlClash's binaries live at D:\FlClash but its config.yaml is
+    // at %APPDATA%\com.follow\clash\config.yaml. Make sure to probe the
+    // data dir, not the install dir, when looking for the config.
     let mut hints = vec![
-        // FlClash — user reports D:\FlClash as the install root in this env.
-        // Also probe the default AppData path for completeness.
+        // FlClash — config lives at %APPDATA%\com.follow\clash\
+        // (the D:\FlClash install root only has the .exe + plugins).
+        ClientHint {
+            name: "FlClash",
+            install_root: appdata_roaming.join("com.follow").join("clash"),
+            config_filenames: &["config.yaml", "mihomo.yaml"],
+        },
+        // FlClash — some installs put data in Local instead of Roaming
+        ClientHint {
+            name: "FlClash",
+            install_root: appdata_local.join("com.follow").join("clash"),
+            config_filenames: &["config.yaml", "mihomo.yaml"],
+        },
+        // FlClash — also probe the binary install root as a fallback in case
+        // a portable install drops config.yaml next to FlClash.exe.
         ClientHint {
             name: "FlClash",
             install_root: PathBuf::from("D:\\FlClash"),
             config_filenames: &["config.yaml", "mihomo.yaml"],
         },
+        // Clash Verge (rev) — installs under %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\
+        // and also the older name clash-verge-rev\
         ClientHint {
-            name: "FlClash",
-            install_root: appdata_local.join("FlClash"),
-            config_filenames: &["config.yaml", "mihomo.yaml"],
+            name: "Clash Verge",
+            install_root: appdata_roaming
+                .join("io.github.clash-verge-rev.clash-verge-rev"),
+            config_filenames: &["clash-verge.yaml", "config.yaml"],
         },
-        // Clash Verge (rev) — installs under %LOCALAPPDATA%\clash-verge\
+        // Clash Verge (rev) — older bundle ID
+        ClientHint {
+            name: "Clash Verge",
+            install_root: appdata_roaming.join("clash-verge-rev"),
+            config_filenames: &["clash-verge.yaml", "config.yaml"],
+        },
+        // Clash Verge (old) — under %LOCALAPPDATA%\clash-verge\
         ClientHint {
             name: "Clash Verge",
             install_root: appdata_local.join("clash-verge"),
-            config_filenames: &["clash-verge.yaml", "config.yaml"],
-        },
-        // Clash Verge (old) — under %APPDATA%\
-        ClientHint {
-            name: "Clash Verge",
-            install_root: appdata_roaming.join("clash-verge"),
             config_filenames: &["clash-verge.yaml", "config.yaml"],
         },
         // Clash for Windows — under %APPDATA%\
